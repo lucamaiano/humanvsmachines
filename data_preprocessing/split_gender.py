@@ -3,13 +3,13 @@ import re
 import shutil
 import random
 
-# Source folder containing the images
+# Source folder containing the images(change if necessary)
 source_folder = "/RealFaces_w_StableDiffusion/datasets/png_images/train/fake/fake_new"
 
-# Destination folder for even-numbered images
+# Destination folder for even-numbered images(change if necessary)
 destination_folder = "/RealFaces_w_StableDiffusion/test_southAmerica/test/fake/fake_new"
 
-# Path to the prompts.txt file
+# Path to the prompts.txt file(change if necessary)
 prompts_file_path = '/RealFaces_w_StableDiffusion/prompts.txt'
 
 # Ensure the destination folder exists

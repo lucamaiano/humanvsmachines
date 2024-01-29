@@ -11,16 +11,12 @@ from Hybrid_PosEncoding import PositionalEncoding,CNNTransformer
 from scipy import stats
 
 
-
-
 # Set random seeds for reproducibility
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-
-
 
 
 def get_data_transform(input_size):
@@ -56,10 +52,8 @@ class CustomBalancedImageFolder(datasets.ImageFolder):
         self.samples = self.real_samples[:min_samples] + self.fake_samples[:min_samples]
 
 
-
 # Detect if we have a GPU available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 
 def evaluate(model, testloader):
@@ -135,19 +129,20 @@ def load_and_test_models(model_names, dataset):
     return loaded_models
 
 def main():
-    # Parameters
+    # Parameters uncoment the data you want to test on 
     #data_dir = '/RealFaces_w_StableDiffusion/test_gender_women'  #Genders 
-    data_dir = '/RealFaces_w_StableDiffusion/datasets/png_images/' #40 000 DATA
-    #data_dir = '/RealFaces_w_StableDiffusion/CDDB/faces' #Gan data for generalization test
+    data_dir = '/RealFaces_w_StableDiffusion/datasets/png_images/' #40 000 DATA(our generated dataset)
+    #data_dir = '/RealFaces_w_StableDiffusion/CDDB/faces' # GAN generated data for generalization testing
 
+    # hyperparameters
     input_size = 224
     workers = 6
     batch_size = 32
 
-    # Create test dataset
+    # Create test dataset (always use the test dataset)
     test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=get_data_transform(input_size)['test'])
 
-    # Create training and validation dataloaders
+    # Create the test dataloader
     dataloaders_dict = {
         'test': torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
     }

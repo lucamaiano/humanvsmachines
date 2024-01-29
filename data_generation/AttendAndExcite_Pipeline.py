@@ -2,6 +2,35 @@ import torch
 from diffusers import StableDiffusionAttendAndExcitePipeline
 import os
 from torch import autocast
+"""
+Script for generating images using the Stable Diffusion Attend and Excite model with specific features, 
+and utilizing negative prompts for image generation. Images are saved to specified directories.
+
+
+Usage:
+1. Make sure to have the required dependencies installed.
+2. Set your Hugging Face model token in the YOUR_TOKEN variable.
+3. Adjust other parameters such as image dimensions, batch size, and model identifier.
+4. Specify the directories for training, testing, and evaluation images.
+5. Run the script.
+
+Parameters:
+- start_index (int): Starting index for processing prompts. Default is 0.
+
+Functions:
+- roundplus(a, b): Rounds 'a' up to the nearest multiple of 'b'.
+- makedir(path): Creates a directory if it doesn't exist.
+
+Main Function:
+- main(start_index): Main function to generate and save images for training, testing, and evaluation sets.
+  - Loads prompts from 'prompts.txt'.
+  - Initializes the StableDiffusionAttendAndExcitePipeline.
+  - Rounds up the number of images to be generated for each set based on the batch size.
+  - Processes prompts and generates images for training, testing, and evaluation sets, saving them in the specified directories.
+
+Note: Commented-out code for saving images in the training and testing sets is provided for reference but is currently disabled.
+Uncomment the chunk of code you need for either generating train,eval or test.
+"""
 
 
 def roundplus(a, b):
