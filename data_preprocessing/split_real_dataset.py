@@ -5,7 +5,7 @@ import shutil
 
 def split():
 
-    path = '/home/alcor/students/alexandra/RealFaces_w_StableDiffusion/datasets/archive' # name of the folder in which is saved the real dataset, put the archive folder downloaded in the datasets one
+    path = '/home/alcor/students/alexandradatasets/archive' # name of the folder in which is saved the real dataset, put the archive folder downloaded in the datasets one
 
     real_images = os.listdir(path)
     random.shuffle(real_images)
@@ -21,9 +21,9 @@ def split():
 
     print("Split length list: ", length_to_split)
 
-    source_folder = "/home/alcor/students/alexandra/RealFaces_w_StableDiffusion/datasets/archive"
+    source_folder = "/home/alcor/students/alexandradatasets/archive"
 
-    destination_folders = ["/home/alcor/students/alexandra/RealFaces_w_StableDiffusion/datasets/png_images/eval/real/","/home/alcor/students/alexandra/RealFaces_w_StableDiffusion/datasets/png_images/test/real/","/home/alcor/students/alexandra/RealFaces_w_StableDiffusion/datasets/png_images/train/real/"]
+    destination_folders = ["/home/alcor/students/alexandradatasets/png_images/eval/real/","/home/alcor/students/alexandradatasets/png_images/test/real/","/home/alcor/students/alexandradatasets/png_images/train/real/"]
 
     # iterate files
     for i in range(3):

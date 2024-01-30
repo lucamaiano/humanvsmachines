@@ -1,0 +1,8 @@
+# Folders
+datasets/
+outputs/
+weights/
+
+# Others
+.DS_Store
+.devcontainer/

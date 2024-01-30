@@ -26,7 +26,7 @@ contents more accurately than non-expert humans would.
 ## Dataset
 | Real (FFHQ)   | Stable Diffusion (ours) | GAN    | GAN2   | GAN3  |
 | ------------- |:-----------------------:|:------:|:------:|:-----:|
-|![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/real.png)|![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/fake.png)| ![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/gan.png)| ![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/gan2.png)| ![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/gan3.png)|
+|![alt text](https://github.com/LucaCorvittoblob/main/readme_images/real.png)|![alt text](https://github.com/LucaCorvittoblob/main/readme_images/fake.png)| ![alt text](https://github.com/LucaCorvittoblob/main/readme_images/gan.png)| ![alt text](https://github.com/LucaCorvittoblob/main/readme_images/gan2.png)| ![alt text](https://github.com/LucaCorvittoblob/main/readme_images/gan3.png)|
 
 The fake generated dataset that we propose is available at the drive folder: [Stable Diffusion fakes](https://drive.google.com/drive/folders/10-n9jY3USb5O_2bh4yUpo1IRPWxe1RIA). The dataset was created using the prompts inside the [`prompts.txt`](prompts.txt) file. Each image's name is structured in this way:
 ```
@@ -36,9 +36,9 @@ where `<#prompt>` is the associated number of the prompt in the [`prompts.txt`](
 | Generated Image | Prompt |
 | --------------- |:-------:|
 | ...| ... |
-|![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/4-54.png)| headshot portrait of a nigerian man, real life, realistic background, 50mm, Facebook, Instagram, shot on iPhone, HD, HDR color, 4k, natural lighting, photography |
+|![alt text](https://github.com/LucaCorvittoblob/main/readme_images/4-54.png)| headshot portrait of a nigerian man, real life, realistic background, 50mm, Facebook, Instagram, shot on iPhone, HD, HDR color, 4k, natural lighting, photography |
 | ...| ... |
-|![alt text](https://github.com/LucaCorvitto/RealFaces_w_StableDiffusion/blob/main/readme_images/248-70.png)| headshot portrait of an old woman with braids blonde hair, real life, shot on iPhone, realistic background, HD, HDR color, 4k, natural lighting, photography, Facebook, Instagram, Pexels, Flickr, Unsplash, 50mm, 85mm, #wow, AMAZING, epic details, epic, beautiful face, fantastic, cinematic, dramatic lighting|
+|![alt text](https://github.com/LucaCorvittoblob/main/readme_images/248-70.png)| headshot portrait of an old woman with braids blonde hair, real life, shot on iPhone, realistic background, HD, HDR color, 4k, natural lighting, photography, Facebook, Instagram, Pexels, Flickr, Unsplash, 50mm, 85mm, #wow, AMAZING, epic details, epic, beautiful face, fantastic, cinematic, dramatic lighting|
 | ...| ... |
 
 However, new images can be generated using the code [`main.py`](main.py). In order to generate images from different prompts then the [`prompts.txt`](prompts.txt) file must be updated.

@@ -7,6 +7,7 @@ import random
 import numpy as np
 from tqdm import tqdm
 import torchvision.models as models
+import timm
 
 # Set random seeds for reproducibility
 random.seed(0)
@@ -103,20 +104,18 @@ def train_model(model, model_name, dataloaders, criterion,optimizer, num_epochs=
 
     return model, history, best_acc
 
-class ResNet18(nn.Module):
+class ViT(nn.Module):
     def __init__(self, num_classes=2):
-        super(ResNet18, self).__init__()
-        # Load the ResNet18 model
-        self.resnet18 = models.resnet18(pretrained=False)
+        super(ViT, self).__init__()
+        # Load the pre-trained ViT model
+        self.ViT = timm.create_model('vit_base_patch16_224', pretrained=False)
         
         # Modify the final fully connected layer for the desired number of output classes
-        num_features = self.resnet18.fc.in_features
-        self.resnet18.fc = nn.Linear(num_features, num_classes)
+        self.ViT.head = nn.Linear(self.ViT.head.in_features, num_classes)
 
     def forward(self, x):
-        x = self.resnet18(x)
+        x = self.ViT(x)
         return x
-
 def save_all(model_name, history):
     
     path_train = model_name + '/train.txt'
@@ -185,8 +184,9 @@ def main():
     num_epochs = 10
 
     # Create training and validation datasets
-    data_dir = '/RealFaces_w_StableDiffusion/datasets_old/png_images/'
-    #data_dir = '/RealFaces_w_StableDiffusion/CDDB/faces'
+    #data_dir = 'datasets_old/png_images/' #update this path
+    #data_dir = 'datasets/png_images'
+    data_dir = '/home/alcor/students/alexandraCDDB/faces'
     train_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'train'), transform=get_data_transform(input_size)['train'])
     eval_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'eval'), transform=get_data_transform(input_size)['eval'])
     test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=get_data_transform(input_size)['test'])
@@ -200,14 +200,15 @@ def main():
     }
 
     # Initialize your custom CNN-Transformer model
-    model = ResNet18().to(device)
+    model = ViT().to(device)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
+
     # Create a folder to save your model
-    model_name = 'ResNet18_scratch'
+    model_name = 'ViT_scratch-gan'
     create_dir(model_name)
 
     # Train and evaluate your model

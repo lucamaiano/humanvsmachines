@@ -55,7 +55,7 @@ def main(start_index=0):
 
 
 
-    with open('/RealFaces_w_StableDiffusion/prompts.txt') as f:
+    with open('prompts.txt') as f:
         lines = f.readlines()
 
     prompts = []
@@ -78,9 +78,9 @@ def main(start_index=0):
     num_eval = roundplus(num_eval, batch_size)
 
 
-    train_dir = '/RealFaces_w_StableDiffusion/train'  # Specify the directory paths
-    test_dir = '/RealFaces_w_StableDiffusion/test'
-    eval_dir = '/RealFaces_w_StableDiffusion/eval'
+    train_dir = 'train'  # Specify the directory paths
+    test_dir = 'test'
+    eval_dir = 'eval'
 
     #makedir('train')
     #makedir('test')

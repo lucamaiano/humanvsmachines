@@ -15,6 +15,7 @@ torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
+
 # Detect if we have a GPU available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -40,7 +41,7 @@ def train_model(model, model_name, dataloaders, criterion,optimizer, num_epochs=
     best_acc = 0.0
 
 
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs)):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
 
         # Each epoch has a training and validation phase
@@ -103,19 +104,106 @@ def train_model(model, model_name, dataloaders, criterion,optimizer, num_epochs=
 
     return model, history, best_acc
 
-class ResNet50(nn.Module):
-    def __init__(self, num_classes=2):
-        super(ResNet50, self).__init__()
-        # Load the pre-trained ResNet50 model
-        self.resnet50 = models.resnet50(pretrained=False)
-        
-        # Modify the final fully connected layer for the desired number of output classes
-        num_features = self.resnet50.fc.in_features
-        self.resnet50.fc = nn.Linear(num_features, num_classes)
+# Custom ResNet without in-place operations
+from torchvision.models.resnet import BasicBlock, ResNet
+
+class CustomResNet(ResNet):
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
+                 groups=1, width_per_group=64, replace_stride_with_dilation=None,
+                 norm_layer=None):
+        super(CustomResNet, self).__init__(block, layers, num_classes, zero_init_residual,
+                                           groups, width_per_group, replace_stride_with_dilation,
+                                           norm_layer)
+        # Change all ReLU in-place operations to non in-place
+        for m in self.modules():
+            if isinstance(m, nn.ReLU):
+                m.inplace = False
+
+def resnet18(pretrained=False, progress=True, **kwargs):
+    return CustomResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+
+# Hybrid CNN-Transformer Model
+
+"""
+class CNNTransformer(nn.Module):
+    def __init__(self, num_classes=2, num_transformer_layers=4):
+        super(CNNTransformer, self).__init__()
+        self.backbone = resnet18(pretrained=True)
+        self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
+       
+        self.transformer = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(d_model=512, nhead=8), num_layers=num_transformer_layers)
+       
+        self.classifier = nn.Linear(512, num_classes)
 
     def forward(self, x):
-        x = self.resnet50(x)
+        x = self.backbone(x)
+        x = torch.flatten(x, start_dim=2)
+        x = x.permute(2, 0, 1)
+        x = self.transformer(x)
+        x = x.mean(dim=0)
+        x = self.classifier(x)
         return x
+"""
+    
+    ######################################################################################################
+    ##################### ANOTHER VERSION ##############################################################
+
+    # Define the Backbone class with ResNet-50
+
+class BackboneResNet50(nn.Module):
+    def __init__(self):
+        super(BackboneResNet50, self).__init__()
+        self.backbone = models.resnet50(pretrained=True)
+        self.backbone.fc = nn.Identity()
+
+    def forward(self, x):
+        x = self.backbone(x)
+        return x
+
+
+
+# Modify the CNNTransformer class to use the BackboneResNet50
+class CNNTransformer(nn.Module):
+    def __init__(self, num_classes=2, num_transformer_layers=4, hidden_dim=1024):
+        super(CNNTransformer, self).__init__()
+
+        # Use the BackboneResNet50 as the backbone
+        self.backbone = BackboneResNet50()
+
+        # Define the transformer encoder with more heads
+        self.transformer = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(hidden_dim ,nhead=8), num_layers=num_transformer_layers
+        )
+
+        # Linear classifier
+        self.classifier = nn.Linear(hidden_dim, num_classes)
+
+    def forward(self, x):
+        # Pass input through the backbone
+        x = self.backbone(x)
+
+        # Check the shape of x and adjust it if needed
+        if x.dim() > 2:
+            x = torch.flatten(x, start_dim=2)
+            x = x.permute(2, 0, 1)
+        else:
+            # If x has only two dimensions, reshape it to have batch dimension
+            x = x.unsqueeze(0)
+
+        # Apply the transformer encoder
+        x = self.transformer(x)
+
+        # Compute the mean over time steps (sequence length)
+        x = x.mean(dim=0)
+
+        # Pass through the classifier
+        x = self.classifier(x)
+
+        return x
+    
+#########################################################################################################################
+#########################################################################################################################
 
 def save_all(model_name, history):
     
@@ -179,14 +267,13 @@ class CustomBalancedImageFolder(datasets.ImageFolder):
 
 def main():
     # Parameters
-    #data_dir = '/RealFaces_w_StableDiffusion/datasets_old/png_images/'  # Update this path
-    data_dir = '/RealFaces_w_StableDiffusion/CDDB/faces'
     input_size = 224
     workers = 6
-    batch_size = 32
+    batch_size = 64
     num_epochs = 10
 
     # Create training and validation datasets
+    data_dir = 'CDDB/faces'
     train_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'train'), transform=get_data_transform(input_size)['train'])
     eval_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'eval'), transform=get_data_transform(input_size)['eval'])
     test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=get_data_transform(input_size)['test'])
@@ -200,18 +287,22 @@ def main():
     }
 
     # Initialize your custom CNN-Transformer model
-    model = ResNet50().to(device)
+    #model = CNNTransformer().to(device)
+    model = CNNTransformer(num_classes=2, num_transformer_layers=1, hidden_dim=2048).to(device)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     # Create a folder to save your model
-    model_name = 'ResNet50_scratch_gan'
-    create_dir(model_name)
+    model_name = 'hybrid_gan_data_new'
+    path = ''
+    create_dir(os.path.join(path, model_name))
+
 
     # Train and evaluate your model
     model, hist, best_acc = train_model(model, model_name, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs)
+    
 
     # Evaluate the model on the test set
     hist["test_acc"] = evaluate(model, dataloaders_dict['test'])
@@ -221,6 +312,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

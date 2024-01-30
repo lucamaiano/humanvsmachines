@@ -1,14 +1,19 @@
 import os
+import tqdm
 import torch
+import pandas as pd
 from torchvision import transforms, datasets
 import random
 import numpy as np
-from ResNet50 import ResNet50
-from ResNet18 import ResNet18
-from BasicCNN import SimpleCNN
-from ViT import ViT
-from Hybrid_PosEncoding import PositionalEncoding,CNNTransformer
+from models.ResNet50 import ResNet50
+from models.ResNet18 import ResNet18
+from models.BasicCNN import SimpleCNN
+from models.ViT import ViT
+from models.Hybrid_PosEncoding import PositionalEncoding
+from models.Hybrid_our_data import CNNTransformer
 from scipy import stats
+from pathlib import Path
+import torch.nn.functional as F
 
 
 # Set random seeds for reproducibility
@@ -42,6 +47,7 @@ def get_data_transform(input_size):
 
     return data_transforms
 
+
 # Define custom dataset loader to balance real and fake images in training
 class CustomBalancedImageFolder(datasets.ImageFolder):
     def __init__(self, root, transform=None):
@@ -50,6 +56,14 @@ class CustomBalancedImageFolder(datasets.ImageFolder):
         self.real_samples = [x for x in self.samples if x[1] == 1]
         min_samples = min(len(self.real_samples), len(self.fake_samples))
         self.samples = self.real_samples[:min_samples] + self.fake_samples[:min_samples]
+
+    def __getitem__(self, index):
+        path, target = self.samples[index]
+        image = self.loader(path)
+        if self.transform is not None:
+            image = self.transform(image)
+
+        return image, target, path
 
 
 # Detect if we have a GPU available
@@ -61,18 +75,34 @@ def evaluate(model, testloader):
     total = 0
     fake_predictions = []
     real_predictions = []
+    fake_confidences = []
+    real_confidences = []
+    image_predictions = {}
 
     with torch.no_grad():
-        for inputs, labels in testloader:
+        for inputs, labels, paths in tqdm.tqdm(testloader):
             inputs = inputs.to(device)
             labels = labels.to(device)
             outputs = model(inputs)
+
+            # Count correct predictions
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+            # Extract confidence values
+            probabilities = F.softmax(outputs, dim=1)
+            max_prob, predicted_class = torch.max(probabilities, dim=1)
+
+            # Extend fake_predictions and real_predictions
             fake_predictions.extend(predicted[labels == 1].cpu().numpy())
             real_predictions.extend(predicted[labels == 0].cpu().numpy())
+
+            # Costruisci il dizionario
+            for path, pred_class, prob_percentage in zip(paths, predicted.cpu().numpy(), max_prob.cpu().numpy()):
+                path_str = str(Path(path))  
+                image_predictions[path_str] = [pred_class, prob_percentage]
+
 
     accuracy = (correct / total) * 100.0
     fake_accuracy = (fake_predictions.count(1) / (total // 2)) * 100.0  # Assuming equal number of 'fake' and 'real' samples
@@ -81,17 +111,15 @@ def evaluate(model, testloader):
     var_fake = np.var(fake_predictions)
     var_real = np.var(real_predictions)
 
-    return accuracy, fake_accuracy, real_accuracy, var_fake, var_real
+    return accuracy, fake_accuracy, real_accuracy, var_fake, var_real, image_predictions
 
 
 
 def create_dir(path):
-    if not os.path.exists(path):
+    if not path.exists():
         #print(path)
-        os.mkdir(path)
+        path.mkdir(parents=True, exist_ok=True)
         print(f'created folder: {path}')
-    else:
-        print(f'directory {path} already exists')
 
 
 #load the models
@@ -99,9 +127,9 @@ def load_and_test_models(model_names, dataset):
     loaded_models = {}
     
     for model_name in model_names:
-        model_path = os.path.join("/RealFaces_w_StableDiffusion/",model_name,'best.pth')
+        model_path = Path("weights/",model_name,'best.pth')
         print(model_path)
-        if not os.path.exists(model_path):
+        if not model_path.exists():
             print(f"Model not found for {model_name}")
             continue
         
@@ -114,33 +142,50 @@ def load_and_test_models(model_names, dataset):
         loaded_models[model_name] = model
         
         # Test the model on the dataset
-        results = evaluate(model, dataset)
-        print(f"Results for {model_name}: {results}")
+        accuracy, fake_accuracy, real_accuracy, var_fake, var_real, image_predictions = evaluate(model, dataset)
+        print(f"Results for {model_name}:\n{accuracy}\n{(fake_accuracy, real_accuracy, var_fake, var_real)}")
         
         # Save results in the model's folder
-        model_save_dir = "/RealFaces_w_StableDiffusion/"
-        model_folder = os.path.join(model_save_dir,model_name, 'results_genders_w')
-        print(model_folder)
+        model_save_dir = "outputs"
+        test_name_dir = "probabilities"
+        if test_name_dir != "":
+            model_folder = Path(model_save_dir,model_name, test_name_dir)
+        else:
+            model_folder = Path(model_save_dir,model_name)
+        print(f"Output path: {model_folder}")
         create_dir(model_folder)
-        results_file = os.path.join(model_folder, 'results_genders_w.txt')
+        results_file = Path(model_folder, f'{test_name_dir}.txt')
         with open(results_file, 'w') as f:
-            f.write(f"Results for {model_name}: {results}")
+            f.write(f"Results for {model_name}:\n{accuracy}")
+            f.write(f"fake_accuracy, real_accuracy, var_fake, var_real: {(fake_accuracy, real_accuracy, var_fake, var_real)}")
+            f.write(f"Per image predictions:\n{image_predictions}")
+
+        # Create a DataFrame containing the image_predictions
+        df = pd.DataFrame(list(image_predictions.items()), columns=['File', 'Prediction_Confidence'])
+        # Split the Prediction_Confidence in two separate columns: Prediction e Confidence
+        df[['Prediction', 'Confidence']] = pd.DataFrame(df['Prediction_Confidence'].tolist(), index=df.index)
+        df = df.drop(columns=['Prediction_Confidence'])
+        # Save in an excel file
+        excel_file_path = Path(model_folder, 'image_predictions.xlsx')  # Sostituisci con il percorso desiderato per il tuo file Excel
+        df.to_excel(excel_file_path, index=False)
+
+        
         
     return loaded_models
 
 def main():
     # Parameters uncoment the data you want to test on 
-    #data_dir = '/RealFaces_w_StableDiffusion/test_gender_women'  #Genders 
-    data_dir = '/RealFaces_w_StableDiffusion/datasets/png_images/' #40 000 DATA(our generated dataset)
-    #data_dir = '/RealFaces_w_StableDiffusion/CDDB/faces' # GAN generated data for generalization testing
+    #data_dir = 'test_gender_women'  #Genders 
+    data_dir = 'datasets/human_dataset/' #40 000 DATA(our generated dataset)
+    #data_dir = 'CDDB/faces' # GAN generated data for generalization testing
 
     # hyperparameters
     input_size = 224
-    workers = 6
-    batch_size = 32
+    workers = 1
+    batch_size = 16
 
     # Create test dataset (always use the test dataset)
-    test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=get_data_transform(input_size)['test'])
+    test_dataset = CustomBalancedImageFolder(Path(data_dir, 'test'), transform=get_data_transform(input_size)['test'])
 
     # Create the test dataloader
     dataloaders_dict = {

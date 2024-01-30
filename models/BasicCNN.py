@@ -6,8 +6,6 @@ from torchvision import transforms, datasets
 import random
 import numpy as np
 from tqdm import tqdm
-import torchvision.models as models
-import timm
 
 # Set random seeds for reproducibility
 random.seed(0)
@@ -104,18 +102,21 @@ def train_model(model, model_name, dataloaders, criterion,optimizer, num_epochs=
 
     return model, history, best_acc
 
-class ViT(nn.Module):
+# Define a very simple CNN model 
+class SimpleCNN(nn.Module):
     def __init__(self, num_classes=2):
-        super(ViT, self).__init__()
-        # Load the pre-trained ViT model
-        self.ViT = timm.create_model('vit_base_patch16_224', pretrained=False)
-        
-        # Modify the final fully connected layer for the desired number of output classes
-        self.ViT.head = nn.Linear(self.ViT.head.in_features, num_classes)
+        super(SimpleCNN, self).__init__()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, padding=2)
+        self.relu1 = nn.ReLU()
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.fc1 = nn.Linear(16 * 112 * 112, num_classes)
 
     def forward(self, x):
-        x = self.ViT(x)
+        x = self.pool1(self.relu1(self.conv1(x)))
+        x = x.view(-1, 16 * 112 * 112)  # Flatten the feature maps
+        x = self.fc1(x)
         return x
+
 def save_all(model_name, history):
     
     path_train = model_name + '/train.txt'
@@ -184,9 +185,8 @@ def main():
     num_epochs = 10
 
     # Create training and validation datasets
-    #data_dir = '/RealFaces_w_StableDiffusion/datasets_old/png_images/' #update this path
-    #data_dir = '/RealFaces_w_StableDiffusion/datasets/png_images'
-    data_dir = '/home/alcor/students/alexandra/RealFaces_w_StableDiffusion/CDDB/faces'
+    #data_dir = 'datasets/png_images/'
+    data_dir = 'CDDB/faces'
     train_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'train'), transform=get_data_transform(input_size)['train'])
     eval_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'eval'), transform=get_data_transform(input_size)['eval'])
     test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=get_data_transform(input_size)['test'])
@@ -200,15 +200,14 @@ def main():
     }
 
     # Initialize your custom CNN-Transformer model
-    model = ViT().to(device)
+    model = SimpleCNN().to(device)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-
     # Create a folder to save your model
-    model_name = 'ViT_scratch-gan'
+    model_name = 'basic_cnn_scratch_gan'
     create_dir(model_name)
 
     # Train and evaluate your model

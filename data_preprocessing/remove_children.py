@@ -13,10 +13,10 @@ def create_dir(path):
 
 # The model architecture
 # download from: https://drive.google.com/open?id=1kiusFljZc9QfcIYdU2s7xrtWHTraHwmW
-AGE_MODEL = '/RealFaces_w_StableDiffusion/weights/deploy_age.prototxt'
+AGE_MODEL = 'weights/deploy_age.prototxt'
 # The model pre-trained weights
 # download from: https://drive.google.com/open?id=1kWv0AjxGSN0g31OeJa02eBGM0R_jcjIl
-AGE_PROTO = '/RealFaces_w_StableDiffusion/weights/age_net.caffemodel'
+AGE_PROTO = 'weights/age_net.caffemodel'
 # Each Caffe Model impose the shape of the input image also image preprocessing is required like mean
 # substraction to eliminate the effect of illunination changes
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
@@ -24,9 +24,9 @@ MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 AGE_INTERVALS = ['(0, 2)', '(4, 6)', '(8, 12)', '(15, 20)',
                 '(25, 32)', '(38, 43)', '(48, 53)', '(60, 100)']
 # download from: https://raw.githubusercontent.com/opencv/opencv/master/samples/dnn/face_detector/deploy.prototxt
-FACE_PROTO = "/RealFaces_w_StableDiffusion/weights/deploy.prototxt"
+FACE_PROTO = "weights/deploy.prototxt"
 # download from: https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20180205_fp16/res10_300x300_ssd_iter_140000_fp16.caffemodel
-FACE_MODEL = "/RealFaces_w_StableDiffusion/weights/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+FACE_MODEL = "weights/res10_300x300_ssd_iter_140000_fp16.caffemodel"
 # Initialize frame size
 frame_width = 512
 frame_height = 512
@@ -139,11 +139,11 @@ def predict_age(input_path: str):
 def main():
     
     remove = []
-    images = os.listdir('/RealFaces_w_StableDiffusion/datasets/archive/')
+    images = os.listdir('datasets/archive/')
     del_imgs = 0
     
     for input_p in tqdm(images):
-        input_path = '/RealFaces_w_StableDiffusion/datasets/archive/' + input_p
+        input_path = 'datasets/archive/' + input_p
         age = predict_age(input_path)
         if sum(age[3::]) < 0.8:
 	#if age[0] + age[1] + age[2] > 0.15 :
@@ -151,8 +151,8 @@ def main():
             del_imgs += 1
     
 
-    source_folder = "/RealFaces_w_StableDiffusion/datasets/archive/"
-    destination_folder = "/RealFaces_w_StableDiffusion/datasets/children"
+    source_folder = "datasets/archive/"
+    destination_folder = "datasets/children"
     create_dir(destination_folder)
     
     # iterate files

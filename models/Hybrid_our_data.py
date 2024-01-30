@@ -117,15 +117,6 @@ class CNNTransformer(nn.Module):
         return x
 
 
-# Define your dataset paths
-data_dir = '/RealFaces_w_StableDiffusion/datasets/png_images'
-
-# Define image transforms
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize images to the desired size
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
 # Custom dataset loader to balance real and fake images
 class CustomBalancedImageFolder(ImageFolder):
     def __init__(self, root, transform=None):
@@ -135,58 +126,68 @@ class CustomBalancedImageFolder(ImageFolder):
         min_samples = min(len(self.real_samples), len(self.fake_samples))
         self.samples = self.real_samples[:min_samples] + self.fake_samples[:min_samples]
 
-# Create datasets and data loaders for train, test, and validation
-# Create datasets and data loaders for train, test, and validation
-train_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'train'), transform=transform)
-test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=transform)
-val_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'eval'), transform=transform)
+def main():
+    # Define your dataset paths
+    data_dir = 'datasets/png_images'
 
-# DataLoader for validation and test
-trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=2)
-valloader = DataLoader(val_dataset, batch_size=64, shuffle=True, num_workers=2)
-testloader = DataLoader(test_dataset, batch_size=64, shuffle=True, num_workers=2)
+    # Define image transforms
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),  # Resize images to the desired size
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-# Define and train the model
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = CNNTransformer(num_classes=2).to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # Create datasets and data loaders for train, test, and validation
+    # Create datasets and data loaders for train, test, and validation
+    train_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'train'), transform=transform)
+    test_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'test'), transform=transform)
+    val_dataset = CustomBalancedImageFolder(os.path.join(data_dir, 'eval'), transform=transform)
 
-num_epochs = 10
-for epoch in tqdm(range(num_epochs)):  # Loop over the dataset multiple times
-    running_loss = 0.0
-    for i, data in enumerate(trainloader, 0):
-        inputs, labels = data[0].to(device), data[1].to(device)
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-        running_loss += loss.item()
-        if i % 200 == 199:  # Print every 200 mini-batches
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 200))
-            running_loss = 0.0
+    # DataLoader for validation and test
+    trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=2)
+    valloader = DataLoader(val_dataset, batch_size=64, shuffle=True, num_workers=2)
+    testloader = DataLoader(test_dataset, batch_size=64, shuffle=True, num_workers=2)
 
-print('Finished Training')
+    # Define and train the model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = CNNTransformer(num_classes=2).to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# Evaluation on the test set
-model.eval()
-correct = 0
-total = 0
+    num_epochs = 10
+    for epoch in tqdm(range(num_epochs)):  # Loop over the dataset multiple times
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            inputs, labels = data[0].to(device), data[1].to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+            if i % 200 == 199:  # Print every 200 mini-batches
+                print('[%d, %5d] loss: %.3f' %
+                    (epoch + 1, i + 1, running_loss / 200))
+                running_loss = 0.0
 
-with torch.no_grad():
-    for inputs, labels in testloader:
-        inputs, labels = inputs.to(device), labels.to(device)
+    print('Finished Training')
 
-        outputs = model(inputs)
-        _, predicted = torch.max(outputs.data, 1)
+    # Evaluation on the test set
+    model.eval()
+    correct = 0
+    total = 0
 
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    with torch.no_grad():
+        for inputs, labels in testloader:
+            inputs, labels = inputs.to(device), labels.to(device)
 
-accuracy = 100 * correct / total
-print(f'Accuracy on the test set: {accuracy:.2f}%')
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs.data, 1)
+
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+    accuracy = 100 * correct / total
+    print(f'Accuracy on the test set: {accuracy:.2f}%')
 
 
 
@@ -250,7 +251,7 @@ testloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_w
 """
 """
 # Create a directory to save the images on the remote server
-save_dir = '/RealFaces_w_StableDiffusion/images'  # Replace with the directory where you want to save images on the server
+save_dir = 'images'  # Replace with the directory where you want to save images on the server
 os.makedirs(save_dir, exist_ok=True)
 
 
