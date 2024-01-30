@@ -1,9 +1,9 @@
 
 # Test Data
-![Download](https://drive.google.com/drive/folders/1A-JOqRficR9Jr9ySjT_M02xmvLuxT1Ym?usp=sharing)
+[Download](https://drive.google.com/drive/folders/1A-JOqRficR9Jr9ySjT_M02xmvLuxT1Ym?usp=sharing)
 
 # Pretrained models
-![Download](https://drive.google.com/drive/folders/11v3K3GcJbNE-YV2u9OKXDIwwgBDVh4Gp?usp=sharing)
+[Download](https://drive.google.com/drive/folders/11v3K3GcJbNE-YV2u9OKXDIwwgBDVh4Gp?usp=sharing)
 
 
 ## Dataset (from the old repo)
